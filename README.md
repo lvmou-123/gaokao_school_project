@@ -11,11 +11,11 @@
 | Web 前端 | [lvmou-123/gaokao_school_project-web](https://github.com/lvmou-123/gaokao_school_project-web) |
 | 微信小程序端 | [lvmou-123/gaokao_school_project-app](https://github.com/lvmou-123/gaokao_school_project-app) |
 
-<p align="center">
+<p align="left">
   <img src="images/web.png" width="80%" alt="Web 前端">
 </p>
 
-<p align="center">
+<p align="left">
   <img src="images/app.png" width="38%" alt="微信小程序">
   <img src="images/preview.png" width="38%" alt="预览">
 </p>
