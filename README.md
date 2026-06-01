@@ -1,8 +1,5 @@
-# Gaokao Advisor
-
-高考志愿填报助手后端服务，为微信小程序和 Web 端提供 API 支持。
-
-**作者**: [吕某人](https://github.com/lvmou-123) · 3079490142@qq.com
+**作者**: [吕某人](https://github.com/lvmou-123)
+**邮箱**: 3079490142@qq.com
 
 ## 相关项目
 
