@@ -1,0 +1,1922 @@
+openapi: 3.0.1
+info:
+  title: 高考志愿填报助手 API
+  description: 高考志愿填报小程序后端接口文档，支持院校查询、专业查询、AI 智能推荐等功能
+  contact:
+    name: 开发团队
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- bearer-jwt: []
+tags:
+- name: 认证管理
+  description: 用户注册、登录（手机验证码 + 微信小程序）
+- name: 院校收藏
+  description: 用户收藏/取消收藏院校，查看收藏列表
+- name: 院校推荐
+  description: 基于用户成绩和偏好生成个性化院校推荐列表
+- name: 专业管理
+  description: 高等院校专业信息查询，支持按名称模糊搜索和学科门类筛选
+- name: 志愿管理
+  description: 用户志愿表管理，支持创建、查询和修改志愿状态
+- name: 用户管理
+  description: 用户信息管理、注册与资料查询
+- name: 院校管理
+  description: 全国高等院校信息查询，支持按省份、标签、关键词筛选和分页
+- name: AI 助手
+  description: 基于智谱GLM-4.5的智能志愿填报咨询助手
+paths:
+  /api/users/{id}/scores:
+    put:
+      tags:
+      - 用户管理
+      summary: 更新用户成绩
+      description: 更新用户的高考成绩、排名、考试类型等信息
+      operationId: updateScores
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserScoreRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultUserResponse'
+  /api/applications/{id}/status:
+    put:
+      tags:
+      - 志愿管理
+      summary: 更新志愿状态
+      description: 更新指定志愿的状态（draft / submitted / admitted）
+      operationId: updateStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: status
+        in: query
+        description: 新状态：draft（草稿）、submitted（已提交）、admitted（已录取）
+        required: true
+        schema:
+          type: string
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultApplicationResponse'
+  /api/users/register:
+    post:
+      tags:
+      - 用户管理
+      summary: 用户注册
+      description: 用户名密码注册（非微信/短信注册方式）
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultUserResponse'
+  /api/schools:
+    get:
+      tags:
+      - 院校管理
+      summary: 搜索院校
+      description: 根据关键词、省份、标签等条件分页搜索院校
+      operationId: search
+      parameters:
+      - name: keyword
+        in: query
+        description: 搜索关键词（匹配院校名称）
+        required: false
+        schema:
+          type: string
+      - name: province
+        in: query
+        description: 所在省份
+        required: false
+        schema:
+          type: string
+      - name: tag
+        in: query
+        description: 标签（如：985/211/双一流/普通本科/普通专科）
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: 页码（从0开始）
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        description: 每页条数
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultPageResultSchoolResponse'
+    post:
+      tags:
+      - 院校管理
+      summary: 新增院校
+      description: 添加一所新的高等院校信息（管理端接口）
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultSchoolResponse'
+  /api/recommendations:
+    post:
+      tags:
+      - 院校推荐
+      summary: 智能推荐
+      description: 根据用户成绩、排名、省份和偏好生成冲刺/稳妥/保底三个梯度的院校推荐
+      operationId: recommend
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultListRecommendResponse'
+  /api/majors:
+    get:
+      tags:
+      - 专业管理
+      summary: 搜索专业
+      description: 根据关键词、学科门类等条件分页搜索专业，或查询某院校下的全部专业
+      operationId: list
+      parameters:
+      - name: schoolId
+        in: query
+        description: 所属院校ID（指定后查询该校全部专业）
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: keyword
+        in: query
+        description: 搜索关键词（匹配专业名称）
+        required: false
+        schema:
+          type: string
+      - name: category
+        in: query
+        description: 学科门类（如：工学、理学、医学）
+        required: false
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: 页码（从0开始）
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        description: 每页条数
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultObject'
+    post:
+      tags:
+      - 专业管理
+      summary: 新增专业
+      description: 添加一个新专业（管理端接口）
+      operationId: create_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MajorRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultMajorResponse'
+  /api/favorites/schools/{schoolId}:
+    post:
+      tags:
+      - 院校收藏
+      summary: 收藏院校
+      description: 收藏指定的院校
+      operationId: addFavorite
+      parameters:
+      - name: schoolId
+        in: path
+        description: 院校ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+    delete:
+      tags:
+      - 院校收藏
+      summary: 取消收藏
+      description: 取消收藏指定的院校
+      operationId: removeFavorite
+      parameters:
+      - name: schoolId
+        in: path
+        description: 院校ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+  /api/auth/sms:
+    post:
+      tags:
+      - 认证管理
+      summary: 发送短信验证码
+      description: 向指定手机号发送6位数字验证码，验证码有效期为5分钟
+      operationId: sendSms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendSmsRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+  /api/auth/register:
+    post:
+      tags:
+      - 认证管理
+      summary: 手机号注册
+      description: 通过手机号+验证码注册新用户，自动返回JWT令牌
+      operationId: register_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultAuthResponse'
+  /api/auth/login/wechat:
+    post:
+      tags:
+      - 认证管理
+      summary: 微信小程序登录
+      description: 通过微信code换取openId，新用户自动注册，返回JWT令牌
+      operationId: loginByWeChat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeChatLoginRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultAuthResponse'
+  /api/auth/login/phone:
+    post:
+      tags:
+      - 认证管理
+      summary: 手机号登录
+      description: 通过手机号+验证码快速登录，新用户自动注册
+      operationId: loginByPhone
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneLoginRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultAuthResponse'
+  /api/applications:
+    post:
+      tags:
+      - 志愿管理
+      summary: 添加志愿
+      description: 为用户添加一条志愿记录（含院校、专业和优先级）
+      operationId: create_2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultApplicationResponse'
+  /api/ai/chat:
+    post:
+      tags:
+      - AI 助手
+      summary: AI 对话
+      description: 向AI助手发送志愿填报相关问题，可附带用户成绩信息获取个性化建议
+      operationId: chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+        required: true
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultChatResponse'
+  /api/users/{id}:
+    get:
+      tags:
+      - 用户管理
+      summary: 查询用户信息
+      description: 根据用户ID获取用户基本信息
+      operationId: getById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultUserResponse'
+  /api/schools/{id}:
+    get:
+      tags:
+      - 院校管理
+      summary: 查询院校详情
+      description: 根据院校ID获取详细信息，包含标签列表
+      operationId: getById_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultSchoolResponse'
+  /api/schools/by-major/{majorId}:
+    get:
+      tags:
+      - 院校管理
+      summary: 根据专业查询开设院校
+      description: 根据专业ID查询开设该专业的院校列表，支持分页（按专业名称匹配）
+      operationId: getSchoolsByMajor
+      parameters:
+      - name: majorId
+        in: path
+        description: 专业ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: page
+        in: query
+        description: 页码（从0开始）
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        description: 每页条数
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultPageResultSchoolResponse'
+  /api/recommendations/history/{userId}:
+    get:
+      tags:
+      - 院校推荐
+      summary: 推荐历史
+      description: 查询指定用户的推荐历史记录
+      operationId: history
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultListRecommendResponse'
+  /api/majors/{id}:
+    get:
+      tags:
+      - 专业管理
+      summary: 查询专业详情
+      description: 根据专业ID获取详细信息
+      operationId: getById_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultMajorResponse'
+  /api/favorites/schools:
+    get:
+      tags:
+      - 院校收藏
+      summary: 收藏列表
+      description: 分页获取当前用户的院校收藏列表
+      operationId: listFavorites
+      parameters:
+      - name: page
+        in: query
+        description: 页码（从0开始）
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        description: 每页条数
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultPageResultFavoriteSchoolResponse'
+  /api/favorites/schools/check/{schoolId}:
+    get:
+      tags:
+      - 院校收藏
+      summary: 检查收藏状态
+      description: 检查当前用户是否已收藏指定的院校
+      operationId: checkFavorite
+      parameters:
+      - name: schoolId
+        in: path
+        description: 院校ID
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultFavoriteStatusResponse'
+  /api/applications/user/{userId}:
+    get:
+      tags:
+      - 志愿管理
+      summary: 查询用户志愿列表
+      description: 查询指定用户的所有志愿记录，按优先级排序
+      operationId: listByUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultVoid'
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ResultMapStringString'
+                - $ref: '#/components/schemas/ResultVoid'
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ResultListApplicationResponse'
+components:
+  schemas:
+    ResultVoid:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          type: object
+          description: 响应数据
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    ResultMapStringString:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          type: object
+          additionalProperties:
+            type: string
+            description: 响应数据
+          description: 响应数据
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    UserScoreRequest:
+      type: object
+      properties:
+        totalScore:
+          type: integer
+          description: 高考总分
+          format: int32
+          example: 600
+        rankNum:
+          type: integer
+          description: 全省排名
+          format: int32
+          example: 15000
+        examType:
+          type: string
+          description: 考试类型（物理类/历史类）
+          example: 物理类
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+        graduationYear:
+          type: integer
+          description: 毕业年份
+          format: int32
+          example: 2025
+      description: 更新用户成绩请求
+    ResultUserResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/UserResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 用户ID
+          format: int64
+          example: 1
+        username:
+          type: string
+          description: 用户名
+          example: zhangsan
+        realName:
+          type: string
+          description: 真实姓名
+          example: 张三
+        phone:
+          type: string
+          description: 手机号
+          example: "13800138000"
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+        examType:
+          type: string
+          description: 考试类型（物理类/历史类）
+          example: 物理类
+        totalScore:
+          type: integer
+          description: 高考总分
+          format: int32
+          example: 600
+        rankNum:
+          type: integer
+          description: 全省排名
+          format: int32
+          example: 15000
+      description: 用户信息响应
+    ApplicationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 志愿ID
+          format: int64
+          example: 1
+        userId:
+          type: integer
+          description: 用户ID
+          format: int64
+          example: 1
+        schoolId:
+          type: integer
+          description: 院校ID
+          format: int64
+          example: 1
+        schoolName:
+          type: string
+          description: 院校名称
+          example: 郑州大学
+        majorId:
+          type: integer
+          description: 专业ID
+          format: int64
+          example: 1
+        majorName:
+          type: string
+          description: 专业名称
+          example: 计算机科学与技术
+        priority:
+          type: integer
+          description: 志愿优先级（1-10）
+          format: int32
+          example: 1
+        status:
+          type: string
+          description: 状态：draft-草稿 / submitted-已提交 / admitted-已录取
+          example: draft
+        createdAt:
+          type: string
+          description: 创建时间
+          format: date-time
+      description: 志愿信息响应
+    ResultApplicationResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/ApplicationResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    UserRequest:
+      required:
+      - password
+      - username
+      type: object
+      properties:
+        username:
+          type: string
+          description: 用户名
+          example: zhangsan
+        password:
+          type: string
+          description: 密码
+          example: mypassword123
+        realName:
+          type: string
+          description: 真实姓名
+          example: 张三
+        phone:
+          type: string
+          description: 手机号
+          example: "13800138000"
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+        examType:
+          type: string
+          description: 考试类型（物理类/历史类）
+          example: 物理类
+        graduationYear:
+          type: integer
+          description: 毕业年份
+          format: int32
+          example: 2025
+        totalScore:
+          type: integer
+          description: 高考总分
+          format: int32
+          example: 600
+        rankNum:
+          type: integer
+          description: 全省排名
+          format: int32
+          example: 15000
+      description: 用户注册请求（用户名密码方式）
+    SchoolRequest:
+      required:
+      - name
+      type: object
+      properties:
+        name:
+          type: string
+          description: 院校名称
+          example: 郑州大学
+        code:
+          type: string
+          description: 院校代码
+          example: "10459"
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+        city:
+          type: string
+          description: 所在城市
+          example: 郑州
+        tags:
+          type: array
+          description: 院校标签（如：985、211、双一流）
+          items:
+            type: string
+            description: 院校标签（如：985、211、双一流）
+        category:
+          type: string
+          description: 院校类别
+          example: 综合
+        description:
+          type: string
+          description: 院校简介
+      description: 新增院校请求
+    MajorBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 专业ID
+          format: int64
+          example: 1
+        name:
+          type: string
+          description: 专业名称
+          example: 计算机科学与技术
+      description: 专业简要信息
+    ResultSchoolResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/SchoolResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    SchoolResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 院校ID
+          format: int64
+          example: 1
+        name:
+          type: string
+          description: 院校名称
+          example: 郑州大学
+        code:
+          type: string
+          description: 院校代码
+          example: "10459"
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+        city:
+          type: string
+          description: 所在城市
+          example: 郑州
+        tags:
+          type: array
+          description: 院校标签列表
+          items:
+            type: string
+            description: 院校标签列表
+        category:
+          type: string
+          description: 院校类别
+          example: 综合
+        description:
+          type: string
+          description: 院校简介
+        logo:
+          type: string
+          description: Logo URL
+        website:
+          type: string
+          description: 官网地址
+        majors:
+          type: array
+          description: 开设专业列表
+          items:
+            $ref: '#/components/schemas/MajorBrief'
+      description: 院校信息响应
+    RecommendRequest:
+      required:
+      - userId
+      type: object
+      properties:
+        userId:
+          type: integer
+          description: 用户ID
+          format: int64
+          example: 1
+        score:
+          type: integer
+          description: 高考总分
+          format: int32
+          example: 600
+        rankNum:
+          type: integer
+          description: 全省排名
+          format: int32
+          example: 15000
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+        preferences:
+          type: array
+          description: 偏好标签（如：理工、综合、医药等）
+          items:
+            type: string
+            description: 偏好标签（如：理工、综合、医药等）
+      description: 智能推荐请求
+    RecommendResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 推荐记录ID
+          format: int64
+          example: 1
+        schoolId:
+          type: integer
+          description: 院校ID
+          format: int64
+          example: 1
+        schoolName:
+          type: string
+          description: 院校名称
+          example: 郑州大学
+        majorId:
+          type: integer
+          description: 专业ID
+          format: int64
+          example: 1
+        majorName:
+          type: string
+          description: 专业名称
+          example: 计算机科学与技术
+        probability:
+          type: string
+          description: 录取概率（冲刺/稳妥/保底）
+          example: 冲刺
+        reason:
+          type: string
+          description: 推荐理由
+          example: 该院校往年在河南录取位次约为12000名
+      description: 推荐结果响应
+    ResultListRecommendResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          type: array
+          description: 响应数据
+          items:
+            $ref: '#/components/schemas/RecommendResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    MajorRequest:
+      required:
+      - name
+      - schoolId
+      type: object
+      properties:
+        name:
+          type: string
+          description: 专业名称
+          example: 计算机科学与技术
+        code:
+          type: string
+          description: 专业代码
+          example: "080901"
+        category:
+          type: string
+          description: 学科门类
+          example: 工学
+        description:
+          type: string
+          description: 专业描述
+        schoolId:
+          type: integer
+          description: 所属院校ID
+          format: int64
+          example: 1
+        duration:
+          type: string
+          description: 学制
+          example: 四年
+        degree:
+          type: string
+          description: 授予学位
+          example: 工学学士
+        genderRatio:
+          type: string
+          description: 性别比例
+          example: 男:女 7:3
+        avgSalary:
+          type: string
+          description: 平均薪资
+          example: "¥12,000/月"
+      description: 新增专业请求
+    MajorResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 专业ID
+          format: int64
+          example: 1
+        name:
+          type: string
+          description: 专业名称
+          example: 计算机科学与技术
+        code:
+          type: string
+          description: 专业代码
+          example: "080901"
+        category:
+          type: string
+          description: 学科门类
+          example: 工学
+        description:
+          type: string
+          description: 专业描述
+        schools:
+          type: array
+          description: 开设院校列表
+          items:
+            $ref: '#/components/schemas/SchoolBrief'
+        duration:
+          type: string
+          description: 学制
+          example: 四年
+        degree:
+          type: string
+          description: 授予学位
+          example: 工学学士
+        genderRatio:
+          type: string
+          description: 性别比例
+          example: 男:女 7:3
+        avgSalary:
+          type: string
+          description: 平均薪资
+          example: "¥12,000/月"
+      description: 专业信息响应
+    ResultMajorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/MajorResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    SchoolBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 院校ID
+          format: int64
+          example: 1
+        name:
+          type: string
+          description: 院校名称
+          example: 郑州大学
+      description: 院校简要信息
+    SendSmsRequest:
+      required:
+      - phone
+      type: object
+      properties:
+        phone:
+          pattern: "^1[3-9]\\d{9}$"
+          type: string
+          description: 手机号
+          example: "13800138000"
+      description: 发送短信验证码请求
+    RegisterRequest:
+      required:
+      - code
+      - phone
+      type: object
+      properties:
+        phone:
+          pattern: "^1[3-9]\\d{9}$"
+          type: string
+          description: 手机号
+          example: "13800138000"
+        code:
+          type: string
+          description: 短信验证码
+          example: "123456"
+        password:
+          type: string
+          description: 密码（可选，不设置则使用验证码登录）
+          example: mypassword
+        realName:
+          type: string
+          description: 真实姓名
+          example: 张三
+      description: 手机号注册请求
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT访问令牌
+          example: eyJhbGciOiJIUzI1NiJ9.xxx
+        userId:
+          type: integer
+          description: 用户ID
+          format: int64
+          example: 1
+        nickname:
+          type: string
+          description: 用户昵称
+          example: 小明
+        avatar:
+          type: string
+          description: 头像URL
+          example: https://example.com/avatar.png
+        phone:
+          type: string
+          description: 手机号
+          example: "13800138000"
+      description: 认证响应（JWT令牌 + 用户基本信息）
+    ResultAuthResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/AuthResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    WeChatLoginRequest:
+      required:
+      - code
+      type: object
+      properties:
+        code:
+          type: string
+          description: 微信code（临时登录凭证）
+          example: 071ZkB0w3iQ52O2hPx2w3qEo1q3ZkB0u
+        nickname:
+          type: string
+          description: 微信用户昵称
+          example: 小明
+        avatar:
+          type: string
+          description: 微信头像URL
+          example: https://thirdwx.qlogo.cn/xxx
+      description: 微信小程序登录请求
+    PhoneLoginRequest:
+      required:
+      - code
+      - phone
+      type: object
+      properties:
+        phone:
+          pattern: "^1[3-9]\\d{9}$"
+          type: string
+          description: 手机号
+          example: "13800138000"
+        code:
+          type: string
+          description: 短信验证码
+          example: "123456"
+      description: 手机号登录请求
+    ApplicationRequest:
+      required:
+      - priority
+      - schoolId
+      - userId
+      type: object
+      properties:
+        userId:
+          type: integer
+          description: 用户ID
+          format: int64
+          example: 1
+        schoolId:
+          type: integer
+          description: 院校ID
+          format: int64
+          example: 1
+        majorId:
+          type: integer
+          description: 专业ID（可选）
+          format: int64
+          example: 1
+        priority:
+          type: integer
+          description: 志愿优先级（1-10）
+          format: int32
+          example: 1
+      description: 添加志愿请求
+    ChatRequest:
+      required:
+      - message
+      type: object
+      properties:
+        message:
+          maxLength: 2000
+          minLength: 0
+          type: string
+          description: 用户咨询的问题
+          example: 河南理科600分能报哪些大学？
+        userId:
+          type: string
+          description: 用户ID（可选，携带后可获取个性化建议）
+        score:
+          type: integer
+          description: 高考总分
+          format: int32
+          example: 600
+        rankNum:
+          type: integer
+          description: 全省排名
+          format: int32
+          example: 15000
+        province:
+          type: string
+          description: 所在省份
+          example: 河南
+      description: AI 对话请求
+    ChatResponse:
+      type: object
+      properties:
+        reply:
+          type: string
+          description: AI回复内容
+          example: 根据您的分数和排名，建议冲刺郑州大学...
+        model:
+          type: string
+          description: AI模型名称
+          example: glm-4.5
+      description: AI 对话响应
+    ResultChatResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/ChatResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    PageResultSchoolResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          description: 数据列表
+          items:
+            $ref: '#/components/schemas/SchoolResponse'
+        total:
+          type: integer
+          description: 总记录数
+          format: int64
+          example: 100
+        page:
+          type: integer
+          description: 当前页码（从0开始）
+          format: int32
+          example: 0
+        size:
+          type: integer
+          description: 每页大小
+          format: int32
+          example: 20
+      description: 分页结果
+    ResultPageResultSchoolResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/PageResultSchoolResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    ResultObject:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          type: object
+          description: 响应数据
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    FavoriteSchoolResponse:
+      type: object
+      properties:
+        favoriteId:
+          type: integer
+          description: 收藏记录ID
+          format: int64
+        schoolId:
+          type: integer
+          description: 院校ID
+          format: int64
+        schoolName:
+          type: string
+          description: 院校名称
+        province:
+          type: string
+          description: 所在省份
+        city:
+          type: string
+          description: 所在城市
+        tags:
+          type: array
+          description: 院校标签列表
+          items:
+            type: string
+            description: 院校标签列表
+        category:
+          type: string
+          description: 院校类别
+          example: 综合
+        logo:
+          type: string
+          description: Logo URL
+        createdAt:
+          type: string
+          description: 收藏时间
+      description: 收藏院校信息
+    PageResultFavoriteSchoolResponse:
+      type: object
+      properties:
+        list:
+          type: array
+          description: 数据列表
+          items:
+            $ref: '#/components/schemas/FavoriteSchoolResponse'
+        total:
+          type: integer
+          description: 总记录数
+          format: int64
+          example: 100
+        page:
+          type: integer
+          description: 当前页码（从0开始）
+          format: int32
+          example: 0
+        size:
+          type: integer
+          description: 每页大小
+          format: int32
+          example: 20
+      description: 分页结果
+    ResultPageResultFavoriteSchoolResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/PageResultFavoriteSchoolResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    FavoriteStatusResponse:
+      type: object
+      properties:
+        favorited:
+          type: boolean
+          description: 是否已收藏
+        favoriteId:
+          type: integer
+          description: 收藏记录ID
+          format: int64
+      description: 收藏状态
+    ResultFavoriteStatusResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          $ref: '#/components/schemas/FavoriteStatusResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+    ResultListApplicationResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: 状态码（200=成功）
+          format: int32
+          example: 200
+        message:
+          type: string
+          description: 提示信息
+          example: success
+        data:
+          type: array
+          description: 响应数据
+          items:
+            $ref: '#/components/schemas/ApplicationResponse'
+        timestamp:
+          type: integer
+          description: 时间戳（毫秒）
+          format: int64
+      description: 统一响应结果
+  securitySchemes:
+    bearer-jwt:
+      type: http
+      description: JWT Token，在登录/注册接口获取
+      scheme: bearer
+      bearerFormat: JWT
