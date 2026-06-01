@@ -9,9 +9,11 @@
 | Web 前端 | [lvmou-123/gaokao_school_project-web](https://github.com/lvmou-123/gaokao_school_project-web) |
 | 微信小程序端 | [lvmou-123/gaokao_school_project-app](https://github.com/lvmou-123/gaokao_school_project-app) |
 
-![web](images/web.png)
-
-![app](images/app.png)
+<p align="center">
+  <img src="images/web.png" width="30%" alt="Web 前端">
+  <img src="images/app.png" width="30%" alt="微信小程序">
+  <img src="images/preview.png" width="30%" alt="预览">
+</p>
 
 ## 技术栈
 
