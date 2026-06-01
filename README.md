@@ -4,10 +4,14 @@
 
 ## 相关项目
 
-| 项目 | 地址 | 预览 |
-|---|---|---|
-| Web 前端 | [lvmou-123/gaokao_school_project-web](https://github.com/lvmou-123/gaokao_school_project-web) | ![web](images/web.png) |
-| 微信小程序端 | [lvmou-123/gaokao_school_project-app](https://github.com/lvmou-123/gaokao_school_project-app) | ![app](images/app.png) |
+| 项目 | 地址 |
+|---|---|
+| Web 前端 | [lvmou-123/gaokao_school_project-web](https://github.com/lvmou-123/gaokao_school_project-web) |
+| 微信小程序端 | [lvmou-123/gaokao_school_project-app](https://github.com/lvmou-123/gaokao_school_project-app) |
+
+![web](images/web.png)
+
+![app](images/app.png)
 
 ## 技术栈
 
